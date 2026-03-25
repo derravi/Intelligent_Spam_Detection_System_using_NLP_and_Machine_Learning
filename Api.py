@@ -65,6 +65,9 @@ def spam_prediciton(tx:spam_detection):
                     "Prediction":lr_final_output,
                     "Accuracy":MultinomialNB_accuracy   
                 },
-                
+                "Naive Bayes":{
+                    "Prediction":xgboost_final_output,
+                    "Accuracy":xgb_accuracy   
+                }
             }
         })
