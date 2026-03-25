@@ -69,5 +69,7 @@ def spam_prediciton(tx:spam_detection):
                     "Prediction":xgboost_final_output,
                     "Accuracy":xgb_accuracy   
                 }
+
+                
             }
         })
