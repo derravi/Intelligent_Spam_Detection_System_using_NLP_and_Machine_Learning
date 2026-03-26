@@ -128,3 +128,36 @@ def spam_prediciton(tx:spam_detection):
                 }
             }
         })
+
+#History End point
+@app.get("/history")
+def get_history():
+
+    new_db_object.execute("select * from history order by id desc")
+    rows = new_db_object.fetchall()
+
+    data = []
+    for i in rows:
+        data.append({
+            "id":rows[0],
+            "text":rows[1],
+            "prediction":rows[2],
+        })
+
+    return {"history":data}
+
+#remove the full history from the database
+@app.delete("/history")
+def delet_all_data():
+    new_db_object.execute("delete from history")
+    new_db_object.commit()
+
+    return {"message":"All history deleted."}
+
+#Remove the specific history
+@app.delete("/history/{id}")
+def delete_single(id:int):
+    new_db_object.execute("delete from history where id = ?", (id,))
+    new_db_object.commit()
+
+    return {"message":f"Record {id} is deleted."}
