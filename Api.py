@@ -22,7 +22,33 @@ app = FastAPI(title="Intelligent Spam Detection System using NLP and Machine Lea
 
 @app.get("/")
 def default_route():
-    return {'message':'Intelligent Spam Detection System using NLP and Machine Learning'}
+    return {
+        "Project": "Spam Detection API",
+        "Version": "1.0",
+        "Status": "Active ✅",
+
+        "Description": "Detects spam or human text using ML models.",
+
+        "Models": {
+            "Naive Bayes": MultinomialNB_accuracy,
+            "Logistic Regression": logistic_regressor_accuracy,
+            "XGBoost": xgb_accuracy
+        },
+
+        "Tech": [
+            "FastAPI",
+            "TF-IDF",
+            "Scikit-learn",
+            "XGBoost"
+        ],
+
+        "Endpoint": {
+            "POST /spam_pred": {
+                "input": {"input_text": "Win ₹1000 now"},
+                "output": "spam / human"
+            }
+        }
+    }
 
 @app.post("/spam_pred")
 def spam_prediciton(tx:spam_detection):
@@ -49,7 +75,7 @@ def spam_prediciton(tx:spam_detection):
     lr_final_output = lr_model.predict(output)[0]
 
     #For XGboost Regression 
-    xgboost_output = xgb.predict(new_df)
+    xgboost_output = xgb.predict(output)
     xgboost_final_output = le.inverse_transform(xgboost_output)[0]
 
 
@@ -65,11 +91,9 @@ def spam_prediciton(tx:spam_detection):
                     "Prediction":lr_final_output,
                     "Accuracy":MultinomialNB_accuracy   
                 },
-                "Naive Bayes":{
+                "XGBoost":{
                     "Prediction":xgboost_final_output,
                     "Accuracy":xgb_accuracy   
                 }
-
-                
             }
         })
