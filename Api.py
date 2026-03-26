@@ -19,7 +19,21 @@ MultinomialNB_accuracy = model['lnb_accuracy']
 xgb_accuracy = model['xgb_accuracy']
 
 
+# =========================
+# Sqlite3 DataBase setup
+# =========================
+new_df_file = sqlite3.connect("Database/history.db",check_name_thread=False)
+new_db_object = new_df_file.cursor()
 
+new_db_object.execute(
+    """create table if not exists history(
+    id integer primary key autoincrement,
+    text text,
+    prediction text
+    )"""
+)
+#Commit for save File 
+new_db_object.commit()
 
 
 #Main App
@@ -88,6 +102,13 @@ def spam_prediciton(tx:spam_detection):
     xgboost_output = xgb.predict(output)
     xgboost_final_output = le.inverse_transform(xgboost_output)[0]
 
+    #Save the XGboost Model prediction because they have very hig model accuracy
+    new_db_object.execute(
+        "insert into history (text , prediction) values (?, ?)",
+        (tx.input_text,xgboost_final_output)
+    )
+
+    new_db_object.commit()
 
     return JSONResponse(status_code=200,
         content={
