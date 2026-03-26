@@ -12,7 +12,9 @@ from sklearn.metrics import mean_squared_error,mean_absolute_error,r2_score
 from sklearn.utils import resample
 from sklearn.linear_model import LogisticRegression
 import pickle
+from xgboost import XGBClassifier
 
+from sklearn.preprocessing import LabelEncoder
 
 # =========================
 # LOAD DATA
@@ -112,18 +114,51 @@ print("Lets see the mathamatics terms For Logistic Regression.\n")
 
 logistic_regressor_accuracy = round(accuracy_score(y_test,lr_prediciton)*100,2)
 
-print("Accuracy Score of the Linear Regressor odel:",logistic_regressor_accuracy)
+print("Accuracy Score of the Logistic Regressio odel:",logistic_regressor_accuracy)
 print("\nClassification Report:", classification_report(y_test,lr_prediciton))
 print("\nconfusion matrix:\n", confusion_matrix(y_test,lr_prediciton))
 
 
 
-# #Compare the accuracy of both
+# encode labels
+le = LabelEncoder()
+y_train_encoded = le.fit_transform(y_train)
+y_test_encoded = le.transform(y_test)
 
-print("Lets Compare the accuracy of the both Model.\n")
+# model
+xgb = XGBClassifier(
+    random_state=42,
+    n_estimators=200,
+    learning_rate=0.1,
+    max_depth=6
+)
 
-high_accuracy = f"MultinomiaLNB is have a high accuracy is {MultinomialNB_accuracy}." if MultinomialNB_accuracy > logistic_regressor_accuracy else f"Logistic Regression is have a high accuracy is {logistic_regressor_accuracy}."
-print(high_accuracy)
+# train
+xgb.fit(x_train_tfidf, y_train_encoded)
+
+# predict
+xgb_prediction = xgb.predict(x_test_tfidf)
+
+# decode back (optional)
+xgb_prediction_labels = le.inverse_transform(xgb_prediction)
+
+# accuracy
+xgb_accuracy = round(accuracy_score(y_test, xgb_prediction_labels)*100,2)
+
+print("Accuracy Score:", xgb_accuracy)
+print("\nClassification Report:\n", classification_report(y_test, xgb_prediction_labels))
+print("\nConfusion Matrix:\n", confusion_matrix(y_test, xgb_prediction_labels))
+
+# Compare the accuracy of all models
+
+if MultinomialNB_accuracy > logistic_regressor_accuracy and MultinomialNB_accuracy > xgb_accuracy:
+    print(f"MultinomialNB has highest accuracy: {MultinomialNB_accuracy}")
+
+elif logistic_regressor_accuracy > xgb_accuracy:
+    print(f"Logistic Regression has highest accuracy: {logistic_regressor_accuracy}")
+
+else:
+    print(f"XGBoost has highest accuracy: {xgb_accuracy}")
 
 #User Inout 
 
@@ -144,8 +179,12 @@ new_data['text'] = new_data['text'].replace(r'\d+',' ',regex=True)
 
 txt_output = vectorizer.transform(new_data['text'])
 
+
 lnb_final_output = lnb_model.predict(txt_output)[0]
 lr_final_output = lr_model.predict(txt_output)[0]
+
+xgboost_prediction = xgb.predict(txt_output)
+xgboost_prediction_output = le.inverse_transform(xgboost_prediction)[0]
 
 
 print("\nModel Comparison Result:\n")
@@ -157,17 +196,21 @@ print(f"{'Logistic Regression':<30} | {lr_final_output:<10} | {round(logistic_re
 
 print(f"{'Multinomial Naive Bayes':<30} | {lnb_final_output:<10} | {round(MultinomialNB_accuracy,2)}%")
 
-print("-"*60)#Make the pickle model
+print(f"{'XGboost Regression':<30} | {xgboost_prediction_output:<10} | {round(xgb_accuracy,2)}%")
 
+print("-"*60)
+
+#Make the pickle model
 model = {
     "vectorizer_model" : vectorizer,
+    "label_encoder":le,
     "MultinomialNB_model" : lnb_model,
     "Linear_regressor_model" : lr_model,
+    "xgbooster_model":xgb,
     "lr_accuracy":logistic_regressor_accuracy,
-    "lnb_accuracy":MultinomialNB_accuracy
-    
+    "lnb_accuracy":MultinomialNB_accuracy,
+    "xgb_accuracy":xgb_accuracy,
 }
-
 with open("Models/pkl_model.pkl",'wb') as f:
     pickle.dump(model,f)
 print("Pickle model is Created.")

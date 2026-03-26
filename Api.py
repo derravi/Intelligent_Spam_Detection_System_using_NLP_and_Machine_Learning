@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import pickle
 from Schema.spam_model import spam_detection
 import pandas as pd
+import sqlite3
 
 #Access the Pickle model for ML training Pipelines
 with open('Models/pkl_model.pkl','rb') as f:
@@ -17,9 +18,17 @@ logistic_regressor_accuracy = model['lr_accuracy']
 MultinomialNB_accuracy = model['lnb_accuracy']
 xgb_accuracy = model['xgb_accuracy']
 
+
+
+
+
+#Main App
 app = FastAPI(title="Intelligent Spam Detection System using NLP and Machine Learning")
 
+#Save the History of
+history_data = []
 
+#Default Route
 @app.get("/")
 def default_route():
     return {
@@ -50,6 +59,7 @@ def default_route():
         }
     }
 
+#Prediction Apis
 @app.post("/spam_pred")
 def spam_prediciton(tx:spam_detection):
     
