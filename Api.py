@@ -4,6 +4,7 @@ import pickle
 from Schema.spam_model import spam_detection
 import pandas as pd
 import sqlite3
+from fastapi import HTTPException
 
 #Access the Pickle model for ML training Pipelines
 with open('Models/pkl_model.pkl','rb') as f:
@@ -22,18 +23,19 @@ xgb_accuracy = model['xgb_accuracy']
 # =========================
 # Sqlite3 DataBase setup
 # =========================
-new_df_file = sqlite3.connect("Database/history.db",check_name_thread=False)
-new_db_object = new_df_file.cursor()
+conn = sqlite3.connect("history.db", check_same_thread=False)
+cursor = conn.cursor()
 
-new_db_object.execute(
-    """create table if not exists history(
-    id integer primary key autoincrement,
-    text text,
-    prediction text
-    )"""
+# create table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    text TEXT,
+    prediction TEXT
 )
-#Commit for save File 
-new_db_object.commit()
+""")
+
+conn.commit()
 
 
 #Main App
@@ -103,12 +105,11 @@ def spam_prediciton(tx:spam_detection):
     xgboost_final_output = le.inverse_transform(xgboost_output)[0]
 
     #Save the XGboost Model prediction because they have very hig model accuracy
-    new_db_object.execute(
-        "insert into history (text , prediction) values (?, ?)",
-        (tx.input_text,xgboost_final_output)
+    cursor.execute(
+    "INSERT INTO history (text, prediction) VALUES (?, ?)",
+    (tx.input_text, xgboost_final_output)
     )
-
-    new_db_object.commit()
+    conn.commit()
 
     return JSONResponse(status_code=200,
         content={
@@ -132,32 +133,67 @@ def spam_prediciton(tx:spam_detection):
 #History End point
 @app.get("/history")
 def get_history():
+    cursor.execute("SELECT * FROM history ORDER BY id DESC")
+    rows = cursor.fetchall()
 
-    new_db_object.execute("select * from history order by id desc")
-    rows = new_db_object.fetchall()
+    #check the history is available ot its empty
+    if not rows:
+        return {
+            "status": "empty",
+            "message": "No history found 📭",
+            "data": []
+        }
 
     data = []
     for i in rows:
         data.append({
-            "id":rows[0],
-            "text":rows[1],
-            "prediction":rows[2],
+            "id": i[0],
+            "text": i[1],
+            "prediction": i[2]
         })
 
-    return {"history":data}
+    return {
+        "status": "success",
+        "count": len(data),
+        "data": data
+    }
 
 #remove the full history from the database
 @app.delete("/history")
-def delet_all_data():
-    new_db_object.execute("delete from history")
-    new_db_object.commit()
+def delete_history():
+     # check if data exists
+     cursor.execute("select count(*) from history")
+     count = cursor.fetchone()[0]
 
-    return {"message":"All history deleted."}
+     if count == 0:
+         return{
+             "status":"error",
+             "message":"Database is alredy empty."
+         }
+     cursor.execute("delete from history")
+     conn.commit()
+
+     return {
+         "status":"success",
+         "message":f"All {count} records deleted."
+     }
 
 #Remove the specific history
 @app.delete("/history/{id}")
-def delete_single(id:int):
-    new_db_object.execute("delete from history where id = ?", (id,))
-    new_db_object.commit()
+def delete_single(id: int):
+    # check if id exists
+    cursor.execute("select * from history where id = ?",(id,))
+    record = cursor.fetchone()[0]
+    
+    if record is None:
+        return {
+            "status":"error",
+            "message":f"Record with id {id} not found."
+        }
 
-    return {"message":f"Record {id} is deleted."}
+    cursor.execute("delete from history where id =?",(id,))
+    conn.commit()
+
+    return {"status":"success",
+             "message":f"Record {id} deleted"
+             }
