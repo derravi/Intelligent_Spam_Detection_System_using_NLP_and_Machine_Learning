@@ -22,3 +22,26 @@ Step:-4
 
 Step:-5 
 -> Now Project is redy for Run.
+
+#Project Structure
+
+├── 📁 Data_Cleaning
+│   └── 📄 EDA.ipynb
+├── 📁 Data_set
+│   ├── 📄 spam.csv
+│   └── 📄 updated.csv
+├── 📁 Database
+│   └── 📄 history.db
+├── 📁 Frontend
+│   └── 🐍 frontend.py
+├── 📁 Models
+│   └── 📄 pkl_model.pkl
+├── 📁 Schema
+│   └── 🐍 spam_model.py
+├── 🐍 Api.py
+├── 🐳 Dockerfile
+├── 📝 README.md
+├── 📄 history.db
+├── 📄 main.ipynb
+├── 🐍 main.py
+└── 📄 requirements.txt
