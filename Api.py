@@ -171,7 +171,8 @@ def delete_history():
             detail="No history found."
         )
 
-     cursor.execute("delete from history")
+     cursor.execute("DELETE FROM history")
+     cursor.execute("DELETE FROM sqlite_sequence WHERE name='history'")
      conn.commit()
 
      return {
