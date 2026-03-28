@@ -138,11 +138,10 @@ def get_history():
 
     #check the history is available ot its empty
     if not rows:
-        return {
-            "status": "empty",
-            "message": "No history found 📭",
-            "data": []
-        }
+        raise HTTPException(
+            status_code=404,
+            detail=f"Record with id {id} not found." 
+        )
 
     data = []
     for i in rows:
@@ -161,15 +160,17 @@ def get_history():
 #remove the full history from the database
 @app.delete("/history")
 def delete_history():
+     ... 
      # check if data exists
      cursor.execute("select count(*) from history")
      count = cursor.fetchone()[0]
 
      if count == 0:
-         return{
-             "status":"error",
-             "message":"Database is alredy empty."
-         }
+        raise HTTPException(
+            status_code=404,
+            detail="No history found."
+        )
+
      cursor.execute("delete from history")
      conn.commit()
 
@@ -181,19 +182,19 @@ def delete_history():
 #Remove the specific history
 @app.delete("/history/{id}")
 def delete_single(id: int):
-    # check if id exists
-    cursor.execute("select * from history where id = ?",(id,))
-    record = cursor.fetchone()[0]
-    
-    if record is None:
-        return {
-            "status":"error",
-            "message":f"Record with id {id} not found."
-        }
+    cursor.execute("select * from history where id = ?", (id,))
+    record = cursor.fetchone()
 
-    cursor.execute("delete from history where id =?",(id,))
+    if record is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Record with id {id} not found."
+        )
+
+    cursor.execute("delete from history where id = ?", (id,))
     conn.commit()
 
-    return {"status":"success",
-             "message":f"Record {id} deleted"
-             }
+    return {
+        "status": "success",
+        "message": f"Record {id} deleted"
+    }
