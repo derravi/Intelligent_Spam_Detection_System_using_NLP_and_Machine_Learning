@@ -7,8 +7,11 @@ import sqlite3
 from fastapi import HTTPException
 
 #Access the Pickle model for ML training Pipelines
-with open('Models/pkl_model.pkl','rb') as f:
-    model = pickle.load(f)
+try:
+    with open('Models/pkl_model.pkl','rb') as f:
+        model = pickle.load(f)
+except FileNotFoundError as e:
+    print(f"Error {e}.")
 
 vectorizer = model['vectorizer_model']
 le = model["label_encoder"]
@@ -23,18 +26,22 @@ xgb_accuracy = model['xgb_accuracy']
 # =========================
 # Sqlite3 DataBase setup
 # =========================
+
 conn = sqlite3.connect("history.db", check_same_thread=False)
 cursor = conn.cursor()
 
-# create table
-cursor.execute("""
-CREATE TABLE IF NOT EXISTS history (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    text TEXT,
-    prediction TEXT
-)
-""")
-
+try:
+    # create table
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS history (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        text TEXT,
+        prediction TEXT
+    )
+    """)
+except Exception as e2:
+    print(f"Error {e2}.")
+    
 conn.commit()
 
 
